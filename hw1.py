@@ -187,6 +187,7 @@ and "task4c.png" respectively.
 def first_deriv_image_x(image: np.ndarray, sigma: float, in_place: bool = False) -> np.ndarray:
     kernel = np.array([[-1,0,1]])
     image1 = convolution(image,kernel,kernel.shape[0],kernel.shape[1],True,in_place)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return gaussian_blur_image(image1,sigma,in_place)
 
 
@@ -199,7 +200,7 @@ def first_deriv_image_y(image: np.ndarray, sigma: float, in_place: bool = False)
 def second_deriv_image(image: np.ndarray, sigma: float, in_place: bool = False) -> np.ndarray:
     kernel = np.array([[0, 1, 0],[1, -4, 1],[0, 1, 0]])
     image1 = convolution(image,kernel,kernel.shape[0],kernel.shape[1],True,in_place)
-    return gaussian_blur_image(image1,sigma,in_place)
+    return gaussian_blur_image(ima,sigma,in_place)
 
 
 """
@@ -347,23 +348,29 @@ def bilinear_interpolation(image: np.ndarray, x: float, y: float) -> np.ndarray:
         else:
             return 0
 
-    value_q11 = image[math.floor(y)][math.floor(x)]
-    value_q12 = image[math.floor(y)][math.ceil(x)]
-    value_q21 = image[math.ceil(y)][math.floor(x)]
-    value_q22 = image[math.ceil(y)][math.ceil(x)]
+    value_11 = image[math.floor(y)][math.floor(x)]
+    value_12 = image[math.floor(y)][math.ceil(x)]
+    value_21 = image[math.ceil(y)][math.floor(x)]
+    value_22 = image[math.ceil(y)][math.ceil(x)]
+    Down = (math.ceil(x)-x) * value_11 + (x - math.floor(x)) * value_21
+    Up = (math.ceil(x)-x) * value_12 +(x - math.floor(x)) * value_22
+    Point = (math.ceil(y)-y) * Down + (y - math.floor(y)) * Up
+    return Point
 
-    R1 = (math.ceil(x)-x) * value_q11 + (x - math.floor(x)) * value_q21
-    R2 = (math.ceil(x)-x) * value_q12 +(x - math.floor(x)) * value_q22
-    P = (math.ceil(y)-y) * R1 + (y - math.floor(y)) * R2
+"""
+def rotation(image: np.ndarray, rotation_angle: float, in_place: bool = False) -> np.ndarray:
+    return util.rotate_image(bilinear_interpolation,image,rotation_angle,in_place)
 
-    return P
-
-
-def rotate_image(image: np.ndarray, rotation_angle: float, in_place: bool = False) -> np.ndarray:
-    rgb = bilinear_interpolation(image, 0.5, 0.0)
-    raise util.rotate_image(bilinear_interpolation,image,rotation_angle,in_place)
-
-
+image_orig = cv2.imread("images/yosemite.png", cv2.IMREAD_COLOR)
+image_rgb = cv2.cvtColor(image_orig, cv2.COLOR_BGR2RGB)
+plt.figure()
+plt.imshow(image_rgb)
+plt.figure()
+kok = rotation(image_rgb, 20)
+cv2.imwrite("task7.png", cv2.cvtColor(kok, cv2.COLOR_RGB2BGR))
+plt.imshow(kok)
+plt.show() 
+"""
 """
 Task 8: Finding edge peaks
 
@@ -392,8 +399,7 @@ def find_peaks_image(image: np.ndarray, thres: float, in_place: bool = False) ->
 
     image_width = image.shape[0]
     image_height = image.shape[1]
-
-    dst_image = np.zeros_like(image)
+    destination_image = np.zeros_like(image)
 
     for c in range(0, image_width):
         for r in range(0, image_height):
@@ -411,19 +417,10 @@ def find_peaks_image(image: np.ndarray, thres: float, in_place: bool = False) ->
             e2 = bilinear_interpolation(magnitude, e2x, e2y)
 
             if e > thres and e > e1 and e > e2:
-                dst_image[c][r] = 255.
+                destination_image[c][r] = 255.
 
-    return dst_image
+    return destination_image
 
-image_orig = cv2.imread("images/virgintrains.jpg", cv2.IMREAD_COLOR)
-image_rgb = cv2.cvtColor(image_orig, cv2.COLOR_BGR2RGB)
-plt.figure()
-plt.imshow(image_rgb)
-plt.figure()
-kok = find_peaks_image(image_rgb, 40.0)
-cv2.imwrite('task8.png', kok)
-plt.imshow(kok)
-plt.show() 
 
 """
 Task 9 (a): K-means color clustering with random seeds (extra task)
